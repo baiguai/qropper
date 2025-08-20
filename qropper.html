@@ -1,279 +1,237 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Image Resizer + Freeform Crop</title>
+  <meta charset="utf-8" />
+  <title>Image Resizer & Cropper</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #121212;
-      color: #e0e0e0;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      min-height: 100vh;
+    body { background:#0b1020; color:#e8ebff; font-family:sans-serif; margin:0; }
+    header { padding:1em; background:#121931; }
+    header h1 { margin:0; font-size:1.2em; }
+    main { display:flex; gap:20px; padding:20px; }
+    .controls { flex:0 0 300px; background:#121931; padding:15px; border-radius:10px; }
+    .controls h2 { margin-top:0; font-size:1em; }
+    .controls label { font-size:0.8em; display:block; margin-top:10px; }
+    .controls input[type="text"],
+    .controls input[type="number"],
+    .controls input[type="url"],
+    .controls input[type="color"] {
+      width:100%; margin-top:4px; padding:6px; border-radius:6px; border:1px solid #2a3570;
+      background:#0e1430; color:#e8ebff;
     }
-    .container {
-      margin-top: 40px;
-      background: #1e1e1e;
-      padding: 25px 30px;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.6);
-      width: 600px;
-      max-width: 95%;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #ffffff;
-    }
-    label {
-      display: block;
-      margin: 15px 0 8px;
-      font-weight: bold;
-      color: #b0b0b0;
-    }
-    input[type="file"], 
-    input[type="url"], 
-    input[type="number"], 
-    input[type="color"] {
-      width: 100%;
-      padding: 8px;
-      border-radius: 6px;
-      border: 1px solid #444;
-      background: #2a2a2a;
-      color: #e0e0e0;
-    }
-    input[type="number"] {
-      width: 48%;
-      display: inline-block;
-    }
-    .number-group {
-      display: flex;
-      justify-content: space-between;
-      gap: 4%;
-    }
-    button {
-      background: #333;
-      border: none;
-      color: #fff;
-      padding: 10px 18px;
-      border-radius: 8px;
-      margin-top: 15px;
-      cursor: pointer;
-      font-size: 14px;
-      transition: background 0.3s;
-    }
-    button:hover {
-      background: #555;
-    }
-    .preview {
-      margin-top: 25px;
-      text-align: center;
-    }
-    canvas {
-      max-width: 100%;
-      border: 1px solid #333;
-      border-radius: 8px;
-      background: #000;
-    }
-    .crop-controls {
-      display: none;
-      margin-top: 10px;
-    }
-    .crop-controls button {
-      margin-right: 8px;
-    }
+    .controls button { margin-top:10px; padding:8px 12px; border:none; border-radius:6px;
+      cursor:pointer; font-weight:bold; background:#6aa8ff; color:#071327; }
+    .controls button.ghost { background:transparent; color:#e8ebff; border:1px solid #2a3570; }
+    #canvas { background:#000; border:1px solid #1b2552; border-radius:10px; max-width:100%; }
+    #cropControls { display:none; margin-top:10px; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>🖼️ Image Resizer</h1>
-
-    <label for="bgColor">Background Color:</label>
-    <input type="color" id="bgColor" value="#000000">
-
-    <label for="fileInput">Choose Image File:</label>
-    <input type="file" id="fileInput" accept="image/*">
-
-    <label for="urlInput">Or Enter Image URL:</label>
-    <input type="url" id="urlInput" placeholder="https://example.com/image.jpg">
-
-    <label>Or Paste Image (Ctrl+V)</label>
-    <p style="font-size: 12px; color: #777; margin-top: -5px;">Paste an image directly into this page.</p>
-
-    <label>Target Size:</label>
-    <div class="number-group">
-      <input type="number" id="widthInput" value="1920" min="1"> 
-      <input type="number" id="heightInput" value="1080" min="1">
-    </div>
-
-    <button onclick="resizeAndShow()">Resize</button>
-    <button onclick="saveImage()">Save as JPG</button>
-    <button onclick="enterCropMode()">Crop</button>
-
-    <div class="crop-controls" id="cropControls">
+<header>
+  <h1>Image Resizer & Cropper</h1>
+</header>
+<main>
+  <section class="controls">
+    <h2>Controls</h2>
+    <label>Background color <input type="color" id="bgColor" value="#000000" style="height: 64px;"></label>
+    <label>Final width <input type="number" id="widthInput" value="1920"></label>
+    <label>Final height <input type="number" id="heightInput" value="1080"></label>
+    <label>Image URL <input type="url" id="urlInput"></label>
+    <input type="file" id="fileInput" accept="image/*" />
+    <button onclick="saveImage()">Save .jpg</button>
+    <button onclick="enterCropMode()" id="cropBtn">Crop</button>
+    <div id="cropControls">
       <button onclick="applyCrop()">Apply Crop</button>
-      <button onclick="cancelCrop()">Cancel</button>
+      <button onclick="cancelCrop()" class="ghost">Cancel</button>
+      <button onclick="snapToTarget()">Snap to Target Ratio</button>
     </div>
+  </section>
+  <section class="canvas-area">
+    <canvas id="canvas" width="1920" height="1080" tabindex="0"></canvas>
+  </section>
+</main>
 
-    <div class="preview">
-      <canvas id="canvas"></canvas>
-    </div>
-  </div>
+<script>
+  const fileInput = document.getElementById('fileInput');
+  const urlInput = document.getElementById('urlInput');
+  const bgColor = document.getElementById('bgColor');
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const cropControls = document.getElementById('cropControls');
+  const cropBtn = document.getElementById('cropBtn');
 
-  <script>
-    const fileInput = document.getElementById('fileInput');
-    const urlInput = document.getElementById('urlInput');
-    const bgColor = document.getElementById('bgColor');
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    const cropControls = document.getElementById('cropControls');
+  let currentImage = null;
+  let originalImage = null;
+  let cropMode = false;
+  let cropRect = null;
 
-    let currentImage = null;
-    let originalImage = null;
-    let cropMode = false;
-    let isDragging = false;
-    let cropRect = null;
-    let dragStartX = 0, dragStartY = 0;
+  fileInput.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = evt => loadImage(evt.target.result);
+    reader.readAsDataURL(file);
+  });
 
-    fileInput.addEventListener('change', e => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = evt => loadImage(evt.target.result);
-      reader.readAsDataURL(file);
-    });
+  urlInput.addEventListener('change', e => {
+    if (e.target.value) loadImage(e.target.value);
+  });
 
-    urlInput.addEventListener('change', e => {
-      if (e.target.value) loadImage(e.target.value);
-    });
-
-    document.addEventListener('paste', e => {
-      const items = e.clipboardData.items;
-      for (let item of items) {
-        if (item.type.startsWith('image')) {
-          const blob = item.getAsFile();
-          const reader = new FileReader();
-          reader.onload = evt => loadImage(evt.target.result);
-          reader.readAsDataURL(blob);
-        }
+  document.addEventListener('paste', e => {
+    const items = e.clipboardData.items;
+    for (let item of items) {
+      if (item.type.startsWith('image')) {
+        const blob = item.getAsFile();
+        const reader = new FileReader();
+        reader.onload = evt => loadImage(evt.target.result);
+        reader.readAsDataURL(blob);
       }
-    });
-
-    function loadImage(src) {
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => {
-        currentImage = img;
-        originalImage = img;
-        resizeAndShow();
-      };
-      img.src = src;
     }
+  });
 
-    function resizeAndShow() {
-      if (!currentImage) return;
-      const targetW = parseInt(document.getElementById('widthInput').value, 10);
-      const targetH = parseInt(document.getElementById('heightInput').value, 10);
-      canvas.width = targetW;
-      canvas.height = targetH;
-      ctx.fillStyle = bgColor.value;
-      ctx.fillRect(0, 0, targetW, targetH);
-      const scale = Math.min(targetW / currentImage.width, targetH / currentImage.height);
-      const newW = currentImage.width * scale;
-      const newH = currentImage.height * scale;
-      const offsetX = (targetW - newW) / 2;
-      const offsetY = (targetH - newH) / 2;
-      ctx.drawImage(currentImage, offsetX, offsetY, newW, newH);
-    }
-
-    function saveImage() {
-      if (!currentImage) return;
-      const link = document.createElement('a');
-      link.download = 'resized.jpg';
-      link.href = canvas.toDataURL('image/jpeg', 0.92);
-      link.click();
-    }
-
-    // ---- Crop Mode ----
-    function enterCropMode() {
-      if (!originalImage) return;
-      cropMode = true;
-      cropRect = null;
-
-      // show image at original resolution
-      canvas.width = originalImage.naturalWidth || originalImage.width;
-      canvas.height = originalImage.naturalHeight || originalImage.height;
-      ctx.drawImage(originalImage, 0, 0);
-
-      cropControls.style.display = "block";
-    }
-
-    function cancelCrop() {
-      cropMode = false;
-      cropRect = null;
+  function loadImage(src) {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      currentImage = img;
+      originalImage = img;
       resizeAndShow();
-      cropControls.style.display = "none";
+    };
+    img.src = src;
+  }
+
+  function resizeAndShow() {
+    if (!currentImage) return;
+    const targetW = parseInt(document.getElementById('widthInput').value, 10);
+    const targetH = parseInt(document.getElementById('heightInput').value, 10);
+    canvas.width = targetW;
+    canvas.height = targetH;
+    ctx.fillStyle = bgColor.value;
+    ctx.fillRect(0, 0, targetW, targetH);
+    const scale = Math.min(targetW / currentImage.width, targetH / currentImage.height);
+    const newW = currentImage.width * scale;
+    const newH = currentImage.height * scale;
+    const offsetX = (targetW - newW) / 2;
+    const offsetY = (targetH - newH) / 2;
+    ctx.drawImage(currentImage, offsetX, offsetY, newW, newH);
+  }
+
+  function saveImage() {
+    if (!currentImage) return;
+    const link = document.createElement('a');
+    link.download = 'resized.jpg';
+    link.href = canvas.toDataURL('image/jpeg', 0.92);
+    link.click();
+  }
+
+  // ---- Crop Mode ----
+  function enterCropMode() {
+    if (!originalImage) return;
+    cropMode = true;
+    cropRect = null;
+    canvas.width = originalImage.naturalWidth || originalImage.width;
+    canvas.height = originalImage.naturalHeight || originalImage.height;
+    ctx.drawImage(originalImage, 0, 0);
+    cropControls.style.display = "block";
+    canvas.focus(); // 👈 ensures key events work right away
+  }
+
+  function cancelCrop() {
+    cropMode = false;
+    cropRect = null;
+    resizeAndShow();
+    cropControls.style.display = "none";
+  }
+
+  function applyCrop() {
+    if (!cropRect || !originalImage) return;
+    const {x, y, w, h} = cropRect;
+    const croppedCanvas = document.createElement('canvas');
+    croppedCanvas.width = w;
+    croppedCanvas.height = h;
+    const croppedCtx = croppedCanvas.getContext('2d');
+    croppedCtx.drawImage(originalImage, x, y, w, h, 0, 0, w, h);
+    const img = new Image();
+    img.onload = () => { currentImage = img; resizeAndShow(); };
+    img.src = croppedCanvas.toDataURL();
+    cropMode = false;
+    cropRect = null;
+    cropControls.style.display = "none";
+  }
+
+  function drawCropOverlay() {
+    ctx.drawImage(originalImage, 0, 0);
+    if (cropRect) {
+      ctx.strokeStyle = "red";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(cropRect.x, cropRect.y, cropRect.w, cropRect.h);
+      ctx.fillStyle = "rgba(255,0,0,0.2)";
+      ctx.fillRect(cropRect.x, cropRect.y, cropRect.w, cropRect.h);
     }
+  }
 
-    function applyCrop() {
-      if (!cropRect || !originalImage) return;
-      const {x, y, w, h} = cropRect;
-
-      const croppedCanvas = document.createElement('canvas');
-      croppedCanvas.width = w;
-      croppedCanvas.height = h;
-      const croppedCtx = croppedCanvas.getContext('2d');
-      croppedCtx.drawImage(originalImage, x, y, w, h, 0, 0, w, h);
-
-      const img = new Image();
-      img.onload = () => {
-        currentImage = img;
-        resizeAndShow(); // auto resize after crop
-      };
-      img.src = croppedCanvas.toDataURL();
-
-      cropMode = false;
-      cropRect = null;
-      cropControls.style.display = "none";
+  // Keyboard crop controls
+  document.addEventListener("keydown", e => {
+    if (!cropMode) return;
+    const stepX = Math.floor(canvas.width / 20);
+    const stepY = Math.floor(canvas.height / 20);
+    if (e.key === "Enter" && cropRect) {
+      applyCrop();
     }
+    if (e.key === "Enter" && !cropRect) {
+      const size = Math.min(canvas.width, canvas.height) / 2;
+      cropRect = { x:(canvas.width-size)/2, y:(canvas.height-size)/2, w:size, h:size };
+    }
+    if (!cropRect) return;
+    switch (e.key) {
+      case "h":
+        cropRect.x = Math.max(0, cropRect.x-stepX);
+        break;
+      case "H":
+        cropRect.w = Math.max(10, cropRect.w-stepX);
+        break;
+      case "l":
+        cropRect.x = Math.min(canvas.width-cropRect.w, cropRect.x+stepX);
+        break;
+      case "L":
+        cropRect.w = Math.min(canvas.width-cropRect.x, cropRect.w+stepX);
+        break;
+      case "k":
+        cropRect.y = Math.max(0, cropRect.y-stepY);
+        break;
+      case "K":
+        cropRect.h = Math.max(10, cropRect.h-stepY);
+        break;
+      case "j":
+        cropRect.y = Math.min(canvas.height-cropRect.h, cropRect.y+stepY);
+        break;
+      case "J":
+        cropRect.h = Math.min(canvas.height-cropRect.y, cropRect.h+stepY);
+        break;
+    }
+    drawCropOverlay();
+  });
 
-    canvas.addEventListener('mousedown', e => {
-      if (!cropMode) return;
-      const rect = canvas.getBoundingClientRect();
-      dragStartX = e.clientX - rect.left;
-      dragStartY = e.clientY - rect.top;
-      isDragging = true;
-    });
-
-    canvas.addEventListener('mousemove', e => {
-      if (!cropMode || !isDragging) return;
-      const rect = canvas.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-      cropRect = {
-        x: Math.min(dragStartX, mouseX),
-        y: Math.min(dragStartY, mouseY),
-        w: Math.abs(mouseX - dragStartX),
-        h: Math.abs(mouseY - dragStartY)
-      };
-      ctx.drawImage(originalImage, 0, 0);
-      if (cropRect) {
-        ctx.strokeStyle = "red";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(cropRect.x, cropRect.y, cropRect.w, cropRect.h);
-        ctx.fillStyle = "rgba(255,0,0,0.2)";
-        ctx.fillRect(cropRect.x, cropRect.y, cropRect.w, cropRect.h);
-      }
-    });
-
-    canvas.addEventListener('mouseup', e => {
-      if (!cropMode) return;
-      isDragging = false;
-    });
-  </script>
+  // Snap-to-target aspect ratio
+  function snapToTarget() {
+    if (!originalImage) return;
+    const targetW = parseInt(document.getElementById('widthInput').value, 10);
+    const targetH = parseInt(document.getElementById('heightInput').value, 10);
+    const targetRatio = targetW / targetH;
+    const imgW = canvas.width, imgH = canvas.height;
+    const imgRatio = imgW / imgH;
+    let w,h;
+    if (imgRatio > targetRatio) {
+      h = imgH;
+      w = Math.round(h * targetRatio);
+    } else {
+      w = imgW;
+      h = Math.round(w / targetRatio);
+    }
+    const x = Math.floor((imgW - w) / 2);
+    const y = Math.floor((imgH - h) / 2);
+    cropRect = {x,y,w,h};
+    drawCropOverlay();
+  }
+</script>
 </body>
 </html>
