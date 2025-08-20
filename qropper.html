@@ -5,29 +5,29 @@
   <title>Image Resizer & Cropper</title>
   <style>
     body { background:#000; color:#ddd; font-family:sans-serif; margin:0; }
-    header { padding:1em; background: #121931; }
+    header { padding:1em; background: #0D1017; }
     header h1 { margin:0; font-size:1.2em; }
     main { display:flex; gap:5px; padding:20px; }
-    .controls { flex:0 0 300px; background:#121931; padding:15px; border-radius:0px; }
+    .controls { flex:0 0 300px; background:#0D1017; padding:15px; border-radius:0px; }
     .controls h2 { margin-top:0; font-size:1em; }
     .controls label { font-size:0.8em; display:block; margin-top:10px; }
     .controls input[type="text"],
     .controls input[type="number"],
     .controls input[type="url"],
     .controls input[type="color"] {
-      width:100%; margin-top:4px; padding:6px; border-radius:0px; border:1px solid #2a3570;
-      background:#0e1430; color:#e8ebff;
+      width:100%; margin-top:4px; padding:6px; border-radius:0px; border:1px solid #333;
+      background:#000; color:#e8ebff;
     }
     .controls button { margin-top:10px; padding:8px 12px; border:none; border-radius:0px;
       cursor:pointer; font-weight:bold; background:#6aa8ff; color:#071327; }
     .controls button.ghost { background:transparent; color:#e8ebff; border:1px solid #2a3570; }
-    #canvas { background:#000; border:1px solid #1b2552; border-radius:0px; max-width:100%; }
+    #canvas { background:#000; border:1px solid #333; border-radius:0px; max-width:100%; }
     #cropControls { display:none; margin-top:10px; }
   </style>
 </head>
 <body>
 <header>
-  <h1>Image Resizer & Cropper</h1>
+  <h1>Qropper</h1>
 </header>
 <main>
   <section class="controls">
@@ -57,8 +57,7 @@ Shift + Alt + C  =  Crop
 Shift + Alt + A  =  Apply Crop
 Shift + Alt + X  =  Cancel Crop
 Shift + Alt + P  =  Snap to Target Ratio
-Enter            =  Activate the cropping square
-Enter            =  If cropping square active - applies the crop
+Enter            =  Applies the crop
         </pre>
     <div>
   </section>
@@ -149,6 +148,11 @@ Enter            =  If cropping square active - applies the crop
     canvas.height = originalImage.naturalHeight || originalImage.height;
     ctx.drawImage(originalImage, 0, 0);
     cropControls.style.display = "block";
+
+    const size = Math.min(canvas.width, canvas.height) / 2;
+    cropRect = { x:(canvas.width-size)/2, y:(canvas.height-size)/2, w:size, h:size };
+    drawCropOverlay();
+
     canvas.focus(); // 👈 ensures key events work right away
   }
 
