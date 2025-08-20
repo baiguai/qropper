@@ -37,13 +37,30 @@
     <label>Final height <input type="number" id="heightInput" value="1080"></label>
     <label>Image URL <input type="url" id="urlInput"></label>
     <input type="file" id="fileInput" accept="image/*" />
-    <button onclick="saveImage()">Save .jpg</button>
-    <button onclick="enterCropMode()" id="cropBtn">Crop</button>
+    <button onclick="saveImage()" accesskey="s">Save .jpg</button>
+    <button onclick="enterCropMode()" accesskey="c" id="cropBtn">Crop</button>
     <div id="cropControls">
-      <button onclick="applyCrop()">Apply Crop</button>
-      <button onclick="cancelCrop()" class="ghost">Cancel</button>
-      <button onclick="snapToTarget()">Snap to Target Ratio</button>
+      <button onclick="applyCrop()" accesskey="a">Apply Crop</button>
+      <button onclick="cancelCrop()" accesskey="x" class="ghost">Cancel</button>
+      <button onclick="snapToTarget()" accesskey="p">Snap to Target Ratio</button>
     </div>
+
+    <br />
+    <br />
+    
+    <div>
+        <pre>
+Hotkeys:
+
+Shift + Alt + S  =  Save Image
+Shift + Alt + C  =  Crop
+Shift + Alt + A  =  Apply Crop
+Shift + Alt + X  =  Cancel Crop
+Shift + Alt + P  =  Snap to Target Ratio
+Enter            =  Activate the cropping square
+Enter            =  If cropping square active - applies the crop
+        </pre>
+    <div>
   </section>
   <section class="canvas-area">
     <canvas id="canvas" width="1920" height="1080" tabindex="0"></canvas>
