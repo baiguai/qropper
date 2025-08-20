@@ -52,12 +52,12 @@
         <pre>
 Hotkeys:
 
-Shift + Alt + S  =  Save Image
-Shift + Alt + C  =  Crop
-Shift + Alt + A  =  Apply Crop
-Shift + Alt + X  =  Cancel Crop
-Shift + Alt + P  =  Snap to Target Ratio
-Enter            =  Applies the crop
+s      =  Save Image
+c      =  Crop
+a      =  Apply Crop
+x      =  Cancel Crop
+p      =  Snap to Target Ratio
+Enter  =  Applies the crop
         </pre>
     <div>
   </section>
@@ -153,7 +153,7 @@ Enter            =  Applies the crop
     cropRect = { x:(canvas.width-size)/2, y:(canvas.height-size)/2, w:size, h:size };
     drawCropOverlay();
 
-    canvas.focus(); // 👈 ensures key events work right away
+    canvas.focus();
   }
 
   function cancelCrop() {
@@ -204,30 +204,14 @@ Enter            =  Applies the crop
     }
     if (!cropRect) return;
     switch (e.key) {
-      case "h":
-        cropRect.x = Math.max(0, cropRect.x-stepX);
-        break;
-      case "H":
-        cropRect.w = Math.max(10, cropRect.w-stepX);
-        break;
-      case "l":
-        cropRect.x = Math.min(canvas.width-cropRect.w, cropRect.x+stepX);
-        break;
-      case "L":
-        cropRect.w = Math.min(canvas.width-cropRect.x, cropRect.w+stepX);
-        break;
-      case "k":
-        cropRect.y = Math.max(0, cropRect.y-stepY);
-        break;
-      case "K":
-        cropRect.h = Math.max(10, cropRect.h-stepY);
-        break;
-      case "j":
-        cropRect.y = Math.min(canvas.height-cropRect.h, cropRect.y+stepY);
-        break;
-      case "J":
-        cropRect.h = Math.min(canvas.height-cropRect.y, cropRect.h+stepY);
-        break;
+      case "h": cropRect.x = Math.max(0, cropRect.x-stepX); break;
+      case "H": cropRect.w = Math.max(10, cropRect.w-stepX); break;
+      case "l": cropRect.x = Math.min(canvas.width-cropRect.w, cropRect.x+stepX); break;
+      case "L": cropRect.w = Math.min(canvas.width-cropRect.x, cropRect.w+stepX); break;
+      case "k": cropRect.y = Math.max(0, cropRect.y-stepY); break;
+      case "K": cropRect.h = Math.max(10, cropRect.h-stepY); break;
+      case "j": cropRect.y = Math.min(canvas.height-cropRect.h, cropRect.y+stepY); break;
+      case "J": cropRect.h = Math.min(canvas.height-cropRect.y, cropRect.h+stepY); break;
     }
     drawCropOverlay();
   });
@@ -253,6 +237,18 @@ Enter            =  Applies the crop
     cropRect = {x,y,w,h};
     drawCropOverlay();
   }
+
+  // ---- Global hotkeys ----
+  document.addEventListener("keydown", e => {
+    if (e.target.tagName === "INPUT") return; // don’t trigger inside inputs
+    switch (e.key) {
+      case "s": saveImage(); break;
+      case "c": enterCropMode(); break;
+      case "a": applyCrop(); break;
+      case "x": cancelCrop(); break;
+      case "p": if (cropMode) snapToTarget(); break;
+    }
+  });
 </script>
 </body>
 </html>
