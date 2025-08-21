@@ -1,55 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Image Resizer & Cropper</title>
-  <style>
-    body { background:#000; color:#ddd; font-family:sans-serif; margin:0; }
-    header { padding:1em; background: #0D1017; }
-    header h1 { margin:0; font-size:1.2em; }
-    main { display:flex; gap:5px; padding:20px; }
-    .controls { flex:0 0 300px; background:#0D1017; padding:15px; border-radius:0px; }
-    .controls h2 { margin-top:0; font-size:1em; }
-    .controls label { font-size:0.8em; display:block; margin-top:10px; }
-    .controls input[type="text"],
-    .controls input[type="number"],
-    .controls input[type="url"],
-    .controls input[type="color"] {
-      width:100%; margin-top:4px; padding:6px; border-radius:0px; border:1px solid #333;
-      background:#000; color:#e8ebff;
-    }
-    .controls button { margin-top:10px; padding:8px 12px; border:none; border-radius:0px;
-      cursor:pointer; font-weight:bold; background:#6aa8ff; color:#071327; }
-    .controls button.ghost { background:transparent; color:#e8ebff; border:1px solid #2a3570; }
-    #canvas { background:#000; border:1px solid #333; border-radius:0px; max-width:100%; }
-    #cropControls { display:none; margin-top:10px; }
-  </style>
+    <meta charset="utf-8" />
+    <title>Image Resizer & Cropper</title>
+    <style>
+        body { background:#000; color:#ddd; font-family:sans-serif; margin:0; }
+        header { padding:1em; background: #0D1017; }
+        header h1 { margin:0; font-size:1.2em; }
+        main { display:flex; gap:5px; padding:20px; }
+        .controls { flex:0 0 300px; background:#0D1017; padding:15px; border-radius:0px; }
+        .controls h2 { margin-top:0; font-size:1em; }
+        .controls label { font-size:0.8em; display:block; margin-top:10px; }
+        .controls input[type="text"],
+        .controls input[type="number"],
+        .controls input[type="url"],
+        .controls input[type="color"] {
+            width:100%; margin-top:4px; padding:6px; border-radius:0px; border:1px solid #333;
+            background:#000; color:#e8ebff;
+        }
+        .controls button {
+            margin-top:10px; padding:8px 12px; border:none; border-radius:0px;
+            cursor:pointer; font-weight:bold; background:#6aa8ff; color:#071327;
+        }
+        .controls button.ghost { background:transparent; color:#e8ebff; border:1px solid #2a3570; }
+        #canvas { background:#000; border:1px solid #333; border-radius:0px; max-width:100%; }
+        #cropControls { display:none; margin-top:10px; }
+    </style>
 </head>
 <body>
 <header>
-  <h1>Qropper</h1>
+    <h1>Qropper</h1>
 </header>
 <main>
-  <section class="controls">
-    <h2>Controls</h2>
-    <label>Background color <input type="color" id="bgColor" value="#000000" style="height: 64px;"></label>
-    <label>Final width <input type="number" id="widthInput" value="1920"></label>
-    <label>Final height <input type="number" id="heightInput" value="1080"></label>
-    <label>Image URL <input type="url" id="urlInput"></label>
-    <input type="file" id="fileInput" accept="image/*" />
-    <button onclick="saveImage()" accesskey="s">Save .jpg</button>
-    <button onclick="enterCropMode()" accesskey="c" id="cropBtn">Crop</button>
-    <div id="cropControls">
-      <button onclick="applyCrop()" accesskey="a">Apply Crop</button>
-      <button onclick="cancelCrop()" accesskey="x" class="ghost">Cancel</button>
-      <button onclick="snapToTarget()" accesskey="p">Snap to Target Ratio</button>
-    </div>
+    <section class="controls">
+        <h2>File Name</h2>
+        <label>File name <input type="text" id="fileName" value="cropped" autofocus></label>
+        <h2>Controls</h2>
+        <label>Background color <input type="color" id="bgColor" value="#000000" style="height: 64px;"></label>
+        <label>Final width <input type="number" id="widthInput" value="1920"></label>
+        <label>Final height <input type="number" id="heightInput" value="1080"></label>
+        <input type="file" id="fileInput" class="file" accept="image/*" style="margin-top: 10px;" />
+        <br />
+        <br />
+        <hr />
+        <br />
+        <button onclick="saveImage()" accesskey="s">Save .jpg</button>
+        <button onclick="enterCropMode()" accesskey="c" id="cropBtn">Crop</button>
+        <div id="cropControls">
+            <button onclick="applyCrop()" accesskey="a">Apply Crop</button>
+            <button onclick="cancelCrop()" accesskey="x" class="ghost">Cancel</button>
+            <button onclick="snapToTarget()" accesskey="p">Snap to Target Ratio</button>
+        </div>
 
-    <br />
-    <br />
-    
-    <div>
-        <pre>
+        <br />
+        <br />
+        
+        <div>
+                <pre>
+Usage:
+* Copy an image.
+* Go to Qropper and paste it (ctrl+v).
+
+Or...
+
+* Download image file.
+* Click 'Choose File' and select the image.
+
+If you want to crop the image, make those changes.
+
+* Select File Name, set that value, and hit Enter
+* Hit 's'
+
 Hotkeys:
 
 s      =  Save Image
@@ -58,197 +79,225 @@ a      =  Apply Crop
 x      =  Cancel Crop
 p      =  Snap to Target Ratio
 Enter  =  Applies the crop
-        </pre>
-    <div>
-  </section>
-  <section class="canvas-area">
-    <canvas id="canvas" width="1920" height="1080" tabindex="0"></canvas>
-  </section>
+                </pre>
+        <div>
+    </section>
+    <section class="canvas-area">
+        <canvas id="canvas" width="1920" height="1080" tabindex="0"></canvas>
+    </section>
 </main>
 
 <script>
-  const fileInput = document.getElementById('fileInput');
-  const urlInput = document.getElementById('urlInput');
-  const bgColor = document.getElementById('bgColor');
-  const canvas = document.getElementById('canvas');
-  const ctx = canvas.getContext('2d');
-  const cropControls = document.getElementById('cropControls');
-  const cropBtn = document.getElementById('cropBtn');
+    const fileInput = document.getElementById('fileInput');
+    const bgColor = document.getElementById('bgColor');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const cropControls = document.getElementById('cropControls');
+    const cropBtn = document.getElementById('cropBtn');
+    const fileName = document.getElementById('fileName');
 
-  let currentImage = null;
-  let originalImage = null;
-  let cropMode = false;
-  let cropRect = null;
+    let currentImage = null;
+    let originalImage = null;
+    let cropMode = false;
+    let cropRect = null;
 
-  fileInput.addEventListener('change', e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = evt => loadImage(evt.target.result);
-    reader.readAsDataURL(file);
-  });
-
-  urlInput.addEventListener('change', e => {
-    if (e.target.value) loadImage(e.target.value);
-  });
-
-  document.addEventListener('paste', e => {
-    const items = e.clipboardData.items;
-    for (let item of items) {
-      if (item.type.startsWith('image')) {
-        const blob = item.getAsFile();
+    fileInput.addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (!file) return;
         const reader = new FileReader();
         reader.onload = evt => loadImage(evt.target.result);
-        reader.readAsDataURL(blob);
-      }
-    }
-  });
+        reader.readAsDataURL(file);
 
-  function loadImage(src) {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      currentImage = img;
-      originalImage = img;
-      resizeAndShow();
+        canvas.focus();
+    });
+
+    document.addEventListener('paste', e => {
+        const items = e.clipboardData.items;
+        for (let item of items) {
+            if (item.type.startsWith('image')) {
+                const blob = item.getAsFile();
+                const reader = new FileReader();
+                reader.onload = evt => loadImage(evt.target.result);
+                reader.readAsDataURL(blob);
+            }
+        }
+    });
+
+    function loadImage(src) {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+            currentImage = img;
+            originalImage = img;
+            resizeAndShow();
+        };
+        img.src = src;
+    }
+
+    function resizeAndShow() {
+        if (!currentImage) return;
+        const targetW = parseInt(document.getElementById('widthInput').value, 10);
+        const targetH = parseInt(document.getElementById('heightInput').value, 10);
+        canvas.width = targetW;
+        canvas.height = targetH;
+        ctx.fillStyle = bgColor.value;
+        ctx.fillRect(0, 0, targetW, targetH);
+        const scale = Math.min(targetW / currentImage.width, targetH / currentImage.height);
+        const newW = currentImage.width * scale;
+        const newH = currentImage.height * scale;
+        const offsetX = (targetW - newW) / 2;
+        const offsetY = (targetH - newH) / 2;
+        ctx.drawImage(currentImage, offsetX, offsetY, newW, newH);
+    }
+
+    function saveImage() {
+        if (!currentImage) return;
+        const link = document.createElement('a');
+        link.download = fileName.value + ".jpg";
+        link.href = canvas.toDataURL('image/jpeg', 0.92);
+        link.click();
+    }
+
+    // ---- Crop Mode ----
+    function enterCropMode() {
+        if (!originalImage) return;
+        cropMode = true;
+        cropRect = null;
+        canvas.width = originalImage.naturalWidth || originalImage.width;
+        canvas.height = originalImage.naturalHeight || originalImage.height;
+        ctx.drawImage(originalImage, 0, 0);
+        cropControls.style.display = "block";
+
+        const size = Math.min(canvas.width, canvas.height) / 2;
+        cropRect = { x:(canvas.width-size)/2, y:(canvas.height-size)/2, w:size, h:size };
+        drawCropOverlay();
+
+        canvas.focus();
+    }
+
+    function cancelCrop() {
+        cropMode = false;
+        cropRect = null;
+        resizeAndShow();
+        cropControls.style.display = "none";
+    }
+
+    function applyCrop() {
+        if (!cropRect || !originalImage) return;
+        const {x, y, w, h} = cropRect;
+        const croppedCanvas = document.createElement('canvas');
+        croppedCanvas.width = w;
+        croppedCanvas.height = h;
+        const croppedCtx = croppedCanvas.getContext('2d');
+        croppedCtx.drawImage(originalImage, x, y, w, h, 0, 0, w, h);
+        const img = new Image();
+        img.onload = () => { currentImage = img; resizeAndShow(); };
+        img.src = croppedCanvas.toDataURL();
+        cropMode = false;
+        cropRect = null;
+        cropControls.style.display = "none";
+    }
+
+    function drawCropOverlay() {
+        ctx.drawImage(originalImage, 0, 0);
+        if (cropRect) {
+            ctx.strokeStyle = "red";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(cropRect.x, cropRect.y, cropRect.w, cropRect.h);
+            ctx.fillStyle = "rgba(255,0,0,0.2)";
+            ctx.fillRect(cropRect.x, cropRect.y, cropRect.w, cropRect.h);
+        }
+    }
+
+    // Keyboard crop controls
+    document.addEventListener("keydown", e => {
+        if (!cropMode) return;
+        const stepX = Math.floor(canvas.width / 20);
+        const stepY = Math.floor(canvas.height / 20);
+        if (e.key === "Enter" && cropRect) {
+            applyCrop();
+        }
+        if (e.key === "Enter" && !cropRect) {
+            const size = Math.min(canvas.width, canvas.height) / 2;
+            cropRect = { x:(canvas.width-size)/2, y:(canvas.height-size)/2, w:size, h:size };
+        }
+        if (!cropRect) return;
+        switch (e.key) {
+            case "h": cropRect.x = Math.max(0, cropRect.x-stepX); break;
+            case "H": cropRect.w = Math.max(10, cropRect.w-stepX); break;
+            case "l": cropRect.x = Math.min(canvas.width-cropRect.w, cropRect.x+stepX); break;
+            case "L": cropRect.w = Math.min(canvas.width-cropRect.x, cropRect.w+stepX); break;
+            case "k": cropRect.y = Math.max(0, cropRect.y-stepY); break;
+            case "K": cropRect.h = Math.max(10, cropRect.h-stepY); break;
+            case "j": cropRect.y = Math.min(canvas.height-cropRect.h, cropRect.y+stepY); break;
+            case "J": cropRect.h = Math.min(canvas.height-cropRect.y, cropRect.h+stepY); break;
+        }
+        drawCropOverlay();
+    });
+
+    // Snap-to-target aspect ratio
+    function snapToTarget() {
+        if (!originalImage) return;
+        const targetW = parseInt(document.getElementById('widthInput').value, 10);
+        const targetH = parseInt(document.getElementById('heightInput').value, 10);
+        const targetRatio = targetW / targetH;
+        const imgW = canvas.width, imgH = canvas.height;
+        const imgRatio = imgW / imgH;
+        let w,h;
+        if (imgRatio > targetRatio) {
+            h = imgH;
+            w = Math.round(h * targetRatio);
+        } else {
+            w = imgW;
+            h = Math.round(w / targetRatio);
+        }
+        const x = Math.floor((imgW - w) / 2);
+        const y = Math.floor((imgH - h) / 2);
+        cropRect = {x,y,w,h};
+        drawCropOverlay();
+    }
+
+    // ---- Global hotkeys ----
+    document.addEventListener("keydown", e => {
+        if (e.target.tagName === "INPUT") return; // don’t trigger inside inputs
+        switch (e.key) {
+            case "s": saveImage(); break;
+            case "c": enterCropMode(); break;
+            case "a": applyCrop(); break;
+            case "x": cancelCrop(); break;
+            case "p": if (cropMode) snapToTarget(); break;
+        }
+    });
+
+    fileName.addEventListener("keydown", e => {
+        if (e.key ==="Enter") {
+            canvas.focus();
+        }
+    });
+
+    bgColor.addEventListener("keydown", e => {
+        if (e.key ==="Enter") {
+            canvas.focus();
+        }
+    });
+
+    document.getElementById('widthInput').addEventListener("keydown", e => {
+        if (e.key ==="Enter") {
+            canvas.focus();
+        }
+    });
+
+    document.getElementById('heightInput').addEventListener("keydown", e => {
+        if (e.key ==="Enter") {
+            canvas.focus();
+        }
+    });
+
+
+    window.onload = function() {
+        fileName.focus();
+        fileName.select();
     };
-    img.src = src;
-  }
-
-  function resizeAndShow() {
-    if (!currentImage) return;
-    const targetW = parseInt(document.getElementById('widthInput').value, 10);
-    const targetH = parseInt(document.getElementById('heightInput').value, 10);
-    canvas.width = targetW;
-    canvas.height = targetH;
-    ctx.fillStyle = bgColor.value;
-    ctx.fillRect(0, 0, targetW, targetH);
-    const scale = Math.min(targetW / currentImage.width, targetH / currentImage.height);
-    const newW = currentImage.width * scale;
-    const newH = currentImage.height * scale;
-    const offsetX = (targetW - newW) / 2;
-    const offsetY = (targetH - newH) / 2;
-    ctx.drawImage(currentImage, offsetX, offsetY, newW, newH);
-  }
-
-  function saveImage() {
-    if (!currentImage) return;
-    const link = document.createElement('a');
-    link.download = 'resized.jpg';
-    link.href = canvas.toDataURL('image/jpeg', 0.92);
-    link.click();
-  }
-
-  // ---- Crop Mode ----
-  function enterCropMode() {
-    if (!originalImage) return;
-    cropMode = true;
-    cropRect = null;
-    canvas.width = originalImage.naturalWidth || originalImage.width;
-    canvas.height = originalImage.naturalHeight || originalImage.height;
-    ctx.drawImage(originalImage, 0, 0);
-    cropControls.style.display = "block";
-
-    const size = Math.min(canvas.width, canvas.height) / 2;
-    cropRect = { x:(canvas.width-size)/2, y:(canvas.height-size)/2, w:size, h:size };
-    drawCropOverlay();
-
-    canvas.focus();
-  }
-
-  function cancelCrop() {
-    cropMode = false;
-    cropRect = null;
-    resizeAndShow();
-    cropControls.style.display = "none";
-  }
-
-  function applyCrop() {
-    if (!cropRect || !originalImage) return;
-    const {x, y, w, h} = cropRect;
-    const croppedCanvas = document.createElement('canvas');
-    croppedCanvas.width = w;
-    croppedCanvas.height = h;
-    const croppedCtx = croppedCanvas.getContext('2d');
-    croppedCtx.drawImage(originalImage, x, y, w, h, 0, 0, w, h);
-    const img = new Image();
-    img.onload = () => { currentImage = img; resizeAndShow(); };
-    img.src = croppedCanvas.toDataURL();
-    cropMode = false;
-    cropRect = null;
-    cropControls.style.display = "none";
-  }
-
-  function drawCropOverlay() {
-    ctx.drawImage(originalImage, 0, 0);
-    if (cropRect) {
-      ctx.strokeStyle = "red";
-      ctx.lineWidth = 2;
-      ctx.strokeRect(cropRect.x, cropRect.y, cropRect.w, cropRect.h);
-      ctx.fillStyle = "rgba(255,0,0,0.2)";
-      ctx.fillRect(cropRect.x, cropRect.y, cropRect.w, cropRect.h);
-    }
-  }
-
-  // Keyboard crop controls
-  document.addEventListener("keydown", e => {
-    if (!cropMode) return;
-    const stepX = Math.floor(canvas.width / 20);
-    const stepY = Math.floor(canvas.height / 20);
-    if (e.key === "Enter" && cropRect) {
-      applyCrop();
-    }
-    if (e.key === "Enter" && !cropRect) {
-      const size = Math.min(canvas.width, canvas.height) / 2;
-      cropRect = { x:(canvas.width-size)/2, y:(canvas.height-size)/2, w:size, h:size };
-    }
-    if (!cropRect) return;
-    switch (e.key) {
-      case "h": cropRect.x = Math.max(0, cropRect.x-stepX); break;
-      case "H": cropRect.w = Math.max(10, cropRect.w-stepX); break;
-      case "l": cropRect.x = Math.min(canvas.width-cropRect.w, cropRect.x+stepX); break;
-      case "L": cropRect.w = Math.min(canvas.width-cropRect.x, cropRect.w+stepX); break;
-      case "k": cropRect.y = Math.max(0, cropRect.y-stepY); break;
-      case "K": cropRect.h = Math.max(10, cropRect.h-stepY); break;
-      case "j": cropRect.y = Math.min(canvas.height-cropRect.h, cropRect.y+stepY); break;
-      case "J": cropRect.h = Math.min(canvas.height-cropRect.y, cropRect.h+stepY); break;
-    }
-    drawCropOverlay();
-  });
-
-  // Snap-to-target aspect ratio
-  function snapToTarget() {
-    if (!originalImage) return;
-    const targetW = parseInt(document.getElementById('widthInput').value, 10);
-    const targetH = parseInt(document.getElementById('heightInput').value, 10);
-    const targetRatio = targetW / targetH;
-    const imgW = canvas.width, imgH = canvas.height;
-    const imgRatio = imgW / imgH;
-    let w,h;
-    if (imgRatio > targetRatio) {
-      h = imgH;
-      w = Math.round(h * targetRatio);
-    } else {
-      w = imgW;
-      h = Math.round(w / targetRatio);
-    }
-    const x = Math.floor((imgW - w) / 2);
-    const y = Math.floor((imgH - h) / 2);
-    cropRect = {x,y,w,h};
-    drawCropOverlay();
-  }
-
-  // ---- Global hotkeys ----
-  document.addEventListener("keydown", e => {
-    if (e.target.tagName === "INPUT") return; // don’t trigger inside inputs
-    switch (e.key) {
-      case "s": saveImage(); break;
-      case "c": enterCropMode(); break;
-      case "a": applyCrop(); break;
-      case "x": cancelCrop(); break;
-      case "p": if (cropMode) snapToTarget(); break;
-    }
-  });
 </script>
 </body>
 </html>
