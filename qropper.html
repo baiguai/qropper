@@ -50,6 +50,24 @@
             <button onclick="applyCrop()" accesskey="a">Apply Crop</button>
             <button onclick="cancelCrop()" accesskey="x" class="ghost">Cancel</button>
             <button onclick="snapToTarget()" accesskey="p">Snap to Target Ratio</button>
+            <br />
+            <div>
+                <pre>
+Cropper Controls:
+h      =  Move square left.
+l      =  Move square right.
+j      =  Move square down.
+k      =  Move square up.
+H      =  Reduce square width.
+L      =  Increase square width.
+J      =  Increase square height.
+K      =  Reduce square height.
+a      =  Apply Crop
+x      =  Cancel Crop
+p      =  Snap to Target Ratio
+ENTER  =  Apply the crop.
+                </pre>
+            </div>
         </div>
 
         <br />
@@ -66,19 +84,14 @@ Or...
 * Download image file.
 * Click 'Choose File' and select the image.
 
-If you want to crop the image, make those changes.
+* If you want to crop the image, make those changes.
 
 * Select File Name, set that value, and hit Enter
 * Hit 's'
 
 Hotkeys:
-
 s      =  Save Image
 c      =  Crop
-a      =  Apply Crop
-x      =  Cancel Crop
-p      =  Snap to Target Ratio
-Enter  =  Applies the crop
                 </pre>
         <div>
     </section>
@@ -295,8 +308,7 @@ Enter  =  Applies the crop
 
 
     window.onload = function() {
-        fileName.focus();
-        fileName.select();
+        canvas.focus();
     };
 </script>
 </body>
