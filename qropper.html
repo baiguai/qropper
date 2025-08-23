@@ -33,8 +33,6 @@
 </header>
 <main>
     <section class="controls">
-        <h2>File Name</h2>
-        <label>File name <input type="text" id="fileName" value="cropped" autofocus></label>
         <h2>Controls</h2>
         <label>Background color <input type="color" id="bgColor" value="#000000" style="height: 64px;"></label>
         <button onclick="toggleBackgroundMode()" id="bgModeBtn">Use Blurred Background</button>
@@ -104,7 +102,6 @@ c      =  Crop
     const ctx = canvas.getContext('2d');
     const cropControls = document.getElementById('cropControls');
     const cropBtn = document.getElementById('cropBtn');
-    const fileName = document.getElementById('fileName');
     const bgModeBtn = document.getElementById('bgModeBtn');
 
     let currentImage = null;
@@ -191,8 +188,17 @@ c      =  Crop
 
     function saveImage() {
         if (!currentImage) return;
+
+        let name = prompt("Enter a file name:", "");
+        if (!name) {
+            return;
+        }
+
+        // Strip any extension at the end
+        name = name.replace(/\.[^/.]+$/, "");
+
         const link = document.createElement('a');
-        link.download = fileName.value + ".jpg";
+        link.download = name + ".jpg";
         link.href = canvas.toDataURL('image/jpeg', 0.92);
         link.click();
     }
@@ -289,7 +295,6 @@ c      =  Crop
             case "p": if (cropMode) snapToTarget(); break;
         }
     });
-    fileName.addEventListener("keydown", e => { if (e.key ==="Enter") canvas.focus(); });
     bgColor.addEventListener("keydown", e => { if (e.key ==="Enter") canvas.focus(); });
     document.getElementById('widthInput').addEventListener("keydown", e => { if (e.key ==="Enter") canvas.focus(); });
     document.getElementById('heightInput').addEventListener("keydown", e => { if (e.key ==="Enter") canvas.focus(); });
