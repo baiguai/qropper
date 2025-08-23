@@ -37,6 +37,7 @@
         <label>File name <input type="text" id="fileName" value="cropped" autofocus></label>
         <h2>Controls</h2>
         <label>Background color <input type="color" id="bgColor" value="#000000" style="height: 64px;"></label>
+        <button onclick="toggleBackgroundMode()" id="bgModeBtn">Use Blurred Background</button>
         <label>Final width <input type="number" id="widthInput" value="1920"></label>
         <label>Final height <input type="number" id="heightInput" value="1080"></label>
         <input type="file" id="fileInput" class="file" accept="image/*" style="margin-top: 10px;" />
@@ -69,34 +70,26 @@ ENTER  =  Apply the crop.
                 </pre>
             </div>
         </div>
-
         <br />
         <br />
-        
         <div>
-                <pre>
+            <pre>
 Usage:
 * Copy an image.
 * Go to Qropper and set the background color.
 * Paste the image (ctrl+v).
-
 (note: if hotkeys don't work click on
 the pasted image first, or hit Enter)
-
 Or...
-
 * Download image file.
 * Click 'Choose File' and select the image.
-
 * If you want to crop the image, make those changes.
-
 * Select File Name, set that value, and hit Enter
 * Hit 's'
-
 Hotkeys:
 s      =  Save Image
 c      =  Crop
-                </pre>
+            </pre>
         <div>
     </section>
     <section class="canvas-area">
@@ -112,11 +105,19 @@ c      =  Crop
     const cropControls = document.getElementById('cropControls');
     const cropBtn = document.getElementById('cropBtn');
     const fileName = document.getElementById('fileName');
+    const bgModeBtn = document.getElementById('bgModeBtn');
 
     let currentImage = null;
     let originalImage = null;
     let cropMode = false;
     let cropRect = null;
+    let blurredBackground = false;
+
+    function toggleBackgroundMode() {
+        blurredBackground = !blurredBackground;
+        bgModeBtn.textContent = blurredBackground ? "Use Solid Background" : "Use Blurred Background";
+        resizeAndShow();
+    }
 
     fileInput.addEventListener('change', e => {
         const file = e.target.files[0];
@@ -124,7 +125,6 @@ c      =  Crop
         const reader = new FileReader();
         reader.onload = evt => loadImage(evt.target.result);
         reader.readAsDataURL(file);
-
         canvas.focus();
     });
 
@@ -157,14 +157,36 @@ c      =  Crop
         const targetH = parseInt(document.getElementById('heightInput').value, 10);
         canvas.width = targetW;
         canvas.height = targetH;
-        ctx.fillStyle = bgColor.value;
-        ctx.fillRect(0, 0, targetW, targetH);
+        ctx.clearRect(0, 0, targetW, targetH);
+
+        if (blurredBackground) {
+            // draw zoomed-in blurred darkened background
+            const scale = Math.max(targetW / currentImage.width, targetH / currentImage.height);
+            const newW = currentImage.width * scale;
+            const newH = currentImage.height * scale;
+            const offsetX = (targetW - newW) / 2;
+            const offsetY = (targetH - newH) / 2;
+            ctx.filter = "blur(20px) brightness(0.4)";
+            ctx.drawImage(currentImage, offsetX, offsetY, newW, newH);
+            ctx.filter = "none";
+            ctx.shadowColor = "rgba(0,0,0,0.7)";
+            ctx.shadowBlur = 20;
+        } else {
+            ctx.fillStyle = bgColor.value;
+            ctx.fillRect(0, 0, targetW, targetH);
+            ctx.shadowColor = "transparent";
+            ctx.shadowBlur = 0;
+        }
+
         const scale = Math.min(targetW / currentImage.width, targetH / currentImage.height);
         const newW = currentImage.width * scale;
         const newH = currentImage.height * scale;
         const offsetX = (targetW - newW) / 2;
         const offsetY = (targetH - newH) / 2;
         ctx.drawImage(currentImage, offsetX, offsetY, newW, newH);
+
+        ctx.shadowColor = "transparent";
+        ctx.shadowBlur = 0;
     }
 
     function saveImage() {
@@ -175,7 +197,7 @@ c      =  Crop
         link.click();
     }
 
-    // ---- Crop Mode ----
+    // ---- Crop Mode ---- (unchanged)
     function enterCropMode() {
         if (!originalImage) return;
         cropMode = true;
@@ -184,21 +206,17 @@ c      =  Crop
         canvas.height = originalImage.naturalHeight || originalImage.height;
         ctx.drawImage(originalImage, 0, 0);
         cropControls.style.display = "block";
-
         const size = Math.min(canvas.width, canvas.height) / 2;
         cropRect = { x:(canvas.width-size)/2, y:(canvas.height-size)/2, w:size, h:size };
         drawCropOverlay();
-
         canvas.focus();
     }
-
     function cancelCrop() {
         cropMode = false;
         cropRect = null;
         resizeAndShow();
         cropControls.style.display = "none";
     }
-
     function applyCrop() {
         if (!cropRect || !originalImage) return;
         const {x, y, w, h} = cropRect;
@@ -214,7 +232,6 @@ c      =  Crop
         cropRect = null;
         cropControls.style.display = "none";
     }
-
     function drawCropOverlay() {
         ctx.drawImage(originalImage, 0, 0);
         if (cropRect) {
@@ -225,15 +242,11 @@ c      =  Crop
             ctx.fillRect(cropRect.x, cropRect.y, cropRect.w, cropRect.h);
         }
     }
-
-    // Keyboard crop controls
     document.addEventListener("keydown", e => {
         if (!cropMode) return;
         const stepX = Math.floor(canvas.width / 20);
         const stepY = Math.floor(canvas.height / 20);
-        if (e.key === "Enter" && cropRect) {
-            applyCrop();
-        }
+        if (e.key === "Enter" && cropRect) applyCrop();
         if (e.key === "Enter" && !cropRect) {
             const size = Math.min(canvas.width, canvas.height) / 2;
             cropRect = { x:(canvas.width-size)/2, y:(canvas.height-size)/2, w:size, h:size };
@@ -251,8 +264,6 @@ c      =  Crop
         }
         drawCropOverlay();
     });
-
-    // Snap-to-target aspect ratio
     function snapToTarget() {
         if (!originalImage) return;
         const targetW = parseInt(document.getElementById('widthInput').value, 10);
@@ -261,22 +272,15 @@ c      =  Crop
         const imgW = canvas.width, imgH = canvas.height;
         const imgRatio = imgW / imgH;
         let w,h;
-        if (imgRatio > targetRatio) {
-            h = imgH;
-            w = Math.round(h * targetRatio);
-        } else {
-            w = imgW;
-            h = Math.round(w / targetRatio);
-        }
+        if (imgRatio > targetRatio) { h = imgH; w = Math.round(h * targetRatio); }
+        else { w = imgW; h = Math.round(w / targetRatio); }
         const x = Math.floor((imgW - w) / 2);
         const y = Math.floor((imgH - h) / 2);
         cropRect = {x,y,w,h};
         drawCropOverlay();
     }
-
-    // ---- Global hotkeys ----
     document.addEventListener("keydown", e => {
-        if (e.target.tagName === "INPUT") return; // don’t trigger inside inputs
+        if (e.target.tagName === "INPUT") return;
         switch (e.key) {
             case "s": saveImage(); break;
             case "c": enterCropMode(); break;
@@ -285,35 +289,11 @@ c      =  Crop
             case "p": if (cropMode) snapToTarget(); break;
         }
     });
-
-    fileName.addEventListener("keydown", e => {
-        if (e.key ==="Enter") {
-            canvas.focus();
-        }
-    });
-
-    bgColor.addEventListener("keydown", e => {
-        if (e.key ==="Enter") {
-            canvas.focus();
-        }
-    });
-
-    document.getElementById('widthInput').addEventListener("keydown", e => {
-        if (e.key ==="Enter") {
-            canvas.focus();
-        }
-    });
-
-    document.getElementById('heightInput').addEventListener("keydown", e => {
-        if (e.key ==="Enter") {
-            canvas.focus();
-        }
-    });
-
-
-    window.onload = function() {
-        canvas.focus();
-    };
+    fileName.addEventListener("keydown", e => { if (e.key ==="Enter") canvas.focus(); });
+    bgColor.addEventListener("keydown", e => { if (e.key ==="Enter") canvas.focus(); });
+    document.getElementById('widthInput').addEventListener("keydown", e => { if (e.key ==="Enter") canvas.focus(); });
+    document.getElementById('heightInput').addEventListener("keydown", e => { if (e.key ==="Enter") canvas.focus(); });
+    window.onload = function() { canvas.focus(); };
 </script>
 </body>
 </html>
