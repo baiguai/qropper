@@ -89,6 +89,10 @@ s      =  Save Image
 c      =  Crop
             </pre>
         <div>
+        <div>
+            <h2>Save History</h2>
+            <pre id="saveHistory"></pre>
+        </div>
     </section>
     <section class="canvas-area">
         <canvas id="canvas" width="1920" height="1080" tabindex="0"></canvas>
@@ -103,6 +107,7 @@ c      =  Crop
     const cropControls = document.getElementById('cropControls');
     const cropBtn = document.getElementById('cropBtn');
     const bgModeBtn = document.getElementById('bgModeBtn');
+    const saveHistory = document.getElementById('saveHistory');
 
     let currentImage = null;
     let originalImage = null;
@@ -196,6 +201,8 @@ c      =  Crop
 
         // Strip any extension at the end
         name = name.replace(/\.[^/.]+$/, "");
+
+        saveHistory.prepend(`${name}.jpg\n`);
 
         const link = document.createElement('a');
         link.download = name + ".jpg";
