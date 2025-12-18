@@ -25,6 +25,7 @@
         .controls button.ghost { background:transparent; color:#e8ebff; border:1px solid #2a3570; }
         #canvas { background:#000; border:1px solid #333; border-radius:0px; max-width:100%; }
         #cropControls { display:none; margin-top:10px; }
+        .canvas-area { flex-grow: 1; }
     </style>
 </head>
 <body>
@@ -65,6 +66,7 @@ a      =  Apply Crop
 x      =  Cancel Crop
 p      =  Snap to Target Ratio
 ENTER  =  Apply the crop.
+ESCAPE =  Cancel crop.
                 </pre>
             </div>
         </div>
@@ -108,6 +110,7 @@ c      =  Crop
     const cropBtn = document.getElementById('cropBtn');
     const bgModeBtn = document.getElementById('bgModeBtn');
     const saveHistory = document.getElementById('saveHistory');
+    const canvasArea = document.querySelector('.canvas-area');
 
     let currentImage = null;
     let originalImage = null;
@@ -210,14 +213,23 @@ c      =  Crop
         link.click();
     }
 
-    // ---- Crop Mode ---- (unchanged)
+    // ---- Crop Mode ----
     function enterCropMode() {
         if (!originalImage) return;
         cropMode = true;
         cropRect = null;
-        canvas.width = originalImage.naturalWidth || originalImage.width;
-        canvas.height = originalImage.naturalHeight || originalImage.height;
-        ctx.drawImage(originalImage, 0, 0);
+
+        const availableWidth = canvasArea.clientWidth;
+        const availableHeight = canvasArea.clientHeight;
+
+        const scale = Math.min(availableWidth / originalImage.width, availableHeight / originalImage.height);
+        const newW = originalImage.width * scale;
+        const newH = originalImage.height * scale;
+
+        canvas.width = newW;
+        canvas.height = newH;
+
+        ctx.drawImage(originalImage, 0, 0, newW, newH);
         cropControls.style.display = "block";
         const size = Math.min(canvas.width, canvas.height) / 2;
         cropRect = { x:(canvas.width-size)/2, y:(canvas.height-size)/2, w:size, h:size };
@@ -232,12 +244,16 @@ c      =  Crop
     }
     function applyCrop() {
         if (!cropRect || !originalImage) return;
+
+        const scaleX = originalImage.width / canvas.width;
+        const scaleY = originalImage.height / canvas.height;
+
         const {x, y, w, h} = cropRect;
         const croppedCanvas = document.createElement('canvas');
-        croppedCanvas.width = w;
-        croppedCanvas.height = h;
+        croppedCanvas.width = w * scaleX;
+        croppedCanvas.height = h * scaleY;
         const croppedCtx = croppedCanvas.getContext('2d');
-        croppedCtx.drawImage(originalImage, x, y, w, h, 0, 0, w, h);
+        croppedCtx.drawImage(originalImage, x * scaleX, y * scaleY, w * scaleX, h * scaleY, 0, 0, w * scaleX, h * scaleY);
         const img = new Image();
         img.onload = () => { currentImage = img; resizeAndShow(); };
         img.src = croppedCanvas.toDataURL();
@@ -246,7 +262,7 @@ c      =  Crop
         cropControls.style.display = "none";
     }
     function drawCropOverlay() {
-        ctx.drawImage(originalImage, 0, 0);
+        ctx.drawImage(originalImage, 0, 0, canvas.width, canvas.height);
         if (cropRect) {
             ctx.strokeStyle = "red";
             ctx.lineWidth = 2;
@@ -257,6 +273,10 @@ c      =  Crop
     }
     document.addEventListener("keydown", e => {
         if (!cropMode) return;
+        if (e.key === "Escape") {
+            cancelCrop();
+            return;
+        }
         const stepX = Math.floor(canvas.width / 20);
         const stepY = Math.floor(canvas.height / 20);
         if (e.key === "Enter" && cropRect) applyCrop();
@@ -297,8 +317,8 @@ c      =  Crop
         switch (e.key) {
             case "s": saveImage(); break;
             case "c": enterCropMode(); break;
-            case "a": applyCrop(); break;
-            case "x": cancelCrop(); break;
+            case "a": if (cropMode) applyCrop(); break;
+            case "x": if (cropMode) cancelCrop(); break;
             case "p": if (cropMode) snapToTarget(); break;
         }
     });
